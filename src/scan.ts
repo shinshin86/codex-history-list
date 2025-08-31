@@ -3,10 +3,10 @@ import path from 'node:path';
 
 const IGNORE_DIRS = new Set(['.git', 'node_modules']);
 
-export async function scanDir(root: string): Promise<string[]> {
+export const scanDir = async (root: string): Promise<string[]> => {
   const results: string[] = [];
 
-  async function walk(dir: string) {
+  const walk = async (dir: string) => {
     let entries;
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
@@ -24,18 +24,17 @@ export async function scanDir(root: string): Promise<string[]> {
         }
       }
     }
-  }
+  };
 
   await walk(root);
   return results;
-}
+};
 
-export async function getMtime(file: string): Promise<number> {
+export const getMtime = async (file: string): Promise<number> => {
   try {
     const st = await fs.stat(file);
     return st.mtimeMs;
   } catch {
     return 0;
   }
-}
-
+};

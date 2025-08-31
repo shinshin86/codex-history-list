@@ -20,13 +20,13 @@ type CliOptions = {
   cwdFilter?: string; // substring match on cwd
 };
 
-function resolveDir(d?: string): string {
+const resolveDir = (d?: string): string => {
   if (!d) return path.join(os.homedir(), '.codex', 'sessions');
   if (d.startsWith('~')) return path.join(os.homedir(), d.slice(1));
   return path.resolve(d);
-}
+};
 
-function humanTime(ms: number): string {
+const humanTime = (ms: number): string => {
   try {
     const d = new Date(ms);
     const yyyy = d.getFullYear();
@@ -38,15 +38,15 @@ function humanTime(ms: number): string {
   } catch {
     return '-';
   }
-}
+};
 
-function padEndWidth(s: string, width: number): string {
+const padEndWidth = (s: string, width: number): string => {
   const w = stringWidth(s);
   if (w >= width) return s;
   return s + ' '.repeat(width - w);
-}
+};
 
-function truncateToWidth(text: string, width: number): string {
+const truncateToWidth = (text: string, width: number): string => {
   if (stringWidth(text) <= width) return text;
   const limit = Math.max(1, width - stringWidth('…'));
   let out = '';
@@ -58,12 +58,12 @@ function truncateToWidth(text: string, width: number): string {
     w += cw;
   }
   return out + '…';
-}
+};
 
-async function parseAll(files: string[], concurrency = 16): Promise<SessionSummary[]> {
+const parseAll = async (files: string[], concurrency = 16): Promise<SessionSummary[]> => {
   const res: SessionSummary[] = [];
   let i = 0;
-  async function worker() {
+  const worker = async () => {
     while (i < files.length) {
       const idx = i++;
       const f = files[idx];
@@ -74,13 +74,13 @@ async function parseAll(files: string[], concurrency = 16): Promise<SessionSumma
         // ignore
       }
     }
-  }
+  };
   const workers = Array.from({ length: Math.min(concurrency, files.length || 1) }, worker);
   await Promise.all(workers);
   return res;
-}
+};
 
-async function main() {
+const main = async () => {
   const program = new Command();
   program
     .name('codex-history-list')
@@ -119,20 +119,20 @@ async function main() {
 
   const summaries = await parseAll(candidates);
 
-  function parseDateInput(s?: string): number | undefined {
+  const parseDateInput = (s?: string): number | undefined => {
     if (!s) return undefined;
     const n = Date.parse(s);
     if (!Number.isNaN(n)) return n;
     return undefined;
-  }
+  };
 
   const sinceTs = parseDateInput(opts.since);
   const beforeTs = parseDateInput(opts.before);
-  function itemTimeForFilter(it: SessionSummary): number {
+  const itemTimeForFilter = (it: SessionSummary): number => {
     // Prefer timestamp when present; fallback to mtime
     const t = it.timestamp ? Date.parse(it.timestamp) : NaN;
     return Number.isFinite(t) ? t : it.mtime;
-  }
+  };
 
   let filtered = summaries.filter((it) => {
     if (opts.cwdFilter) {
@@ -204,7 +204,7 @@ async function main() {
     ].join(sep);
     process.stdout.write(row + '\n');
   }
-}
+};
 
 main().catch((err) => {
   console.error(err?.stack || String(err));

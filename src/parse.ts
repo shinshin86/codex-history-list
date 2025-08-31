@@ -4,7 +4,7 @@ import { type SessionSummary, type ParseOptions } from './types.js';
 
 type AnyJson = any;
 
-function textsFromContent(content: any): string[] {
+const textsFromContent = (content: any): string[] => {
   if (content == null) return [];
   if (typeof content === 'string') return [content];
   if (Array.isArray(content)) {
@@ -21,14 +21,14 @@ function textsFromContent(content: any): string[] {
     if (typeof content.text === 'string') return [content.text];
   }
   return [];
-}
+};
 
-function isEnvironmentContext(text: string): boolean {
+const isEnvironmentContext = (text: string): boolean => {
   const t = text.trimStart();
   return t.startsWith('<environment_context>');
-}
+};
 
-function extractCwd(text: string): string | undefined {
+const extractCwd = (text: string): string | undefined => {
   // Try tag pattern first
   const tag = /<cwd>([^<]+)<\/cwd>/m.exec(text);
   if (tag && tag[1]) return tag[1].trim();
@@ -39,9 +39,9 @@ function extractCwd(text: string): string | undefined {
     if (m && m[1]) return m[1].trim();
   }
   return undefined;
-}
+};
 
-export async function parseFile(file: string, opts: ParseOptions = {}): Promise<SessionSummary> {
+export const parseFile = async (file: string, opts: ParseOptions = {}): Promise<SessionSummary> => {
   const stream = fs.createReadStream(file, { encoding: 'utf8' });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
 
@@ -101,5 +101,4 @@ export async function parseFile(file: string, opts: ParseOptions = {}): Promise<
   } catch {}
 
   return { path: file, cwd, ask, mtime, timestamp };
-}
-
+};
