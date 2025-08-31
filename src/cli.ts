@@ -180,15 +180,17 @@ const main = async () => {
   const cwdW = Math.min(50, Math.max(18, Math.floor(termWidth * 0.3)));
   // Use fixed width for ask column to avoid overly long content
   const askW = 40;
+  // Allocate remaining width to path header for better visual alignment
+  const pathW = Math.max(4, termWidth - (timeW + sep.length + cwdW + sep.length + askW + sep.length));
 
   const header = [
     padEndWidth(chalk.bold('time'), timeW),
     padEndWidth(chalk.bold('cwd'), cwdW),
     padEndWidth(chalk.bold('ask'), askW),
-    chalk.bold('path')
+    padEndWidth(chalk.bold('path'), pathW)
   ].join(sep);
   process.stdout.write(header + '\n');
-  const fixedWidth = timeW + sep.length + cwdW + sep.length + askW + sep.length + stringWidth('path');
+  const fixedWidth = timeW + sep.length + cwdW + sep.length + askW + sep.length + pathW;
   process.stdout.write('-'.repeat(Math.min(termWidth, fixedWidth)) + '\n');
 
   for (const it of output) {
@@ -200,7 +202,7 @@ const main = async () => {
       padEndWidth(timeStr, timeW),
       padEndWidth(truncateToWidth(cwdStr, cwdW), cwdW),
       padEndWidth(truncateToWidth(askStr, askW), askW),
-      pathStr
+      padEndWidth(pathStr, pathW)
     ].join(sep);
     process.stdout.write(row + '\n');
   }
