@@ -5,6 +5,21 @@ It parses JSONL files, extracts the working directory (cwd) from
 `<environment_context>` messages and the first user request, and shows them in
 an aligned table together with the file path.
 
+## Sample Output
+
+```
+time              cwd                                                 ask                                       path
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2025-08-31 17:06  /Users/you/projects/alpha                         Implement feature flag rollout strateg…   /Users/you/.codex/sessions/2025/08/31/rollout-2025-08-31T17-06-00-aaaa-bbbb-cccc-dddd.jsonl
+2025-08-31 16:49  /Users/you/projects/beta                          Refactor modules to arrow functions ac…   /Users/you/.codex/sessions/2025/08/31/rollout-2025-08-31T16-49-44-1111-2222-3333-4444.jsonl
+2025-08-31 16:02  /Users/you/projects/gamma                         -                                         /Users/you/.codex/sessions/2025/08/31/rollout-2025-08-31T16-02-10-a1b2-c3d4-e5f6-7890.jsonl
+2025-08-31 15:10  /Users/you/projects/delta                         Add unit tests for scanner and parser     /Users/you/.codex/sessions/2025/08/31/rollout-2025-08-31T15-10-59-dead-beef-cafe-babe.jsonl
+2025-08-31 14:55  /Users/you/projects/epsilon                       Investigate performance regression in p…   /Users/you/.codex/sessions/2025/08/31/rollout-2025-08-31T14-55-23-9abc-def0-1234-5678.jsonl
+2025-08-31 14:12  /Users/you/projects/zeta                          Doc update: README sample output table …   /Users/you/.codex/sessions/2025/08/31/rollout-2025-08-31T14-12-45-0246-8ace-1357-9bdf.jsonl
+2025-08-31 13:01  /Users/you/projects/eta                           Chore: lint, format, fix types            /Users/you/.codex/sessions/2025/08/31/rollout-2025-08-31T13-01-12-aaaa-0000-bbbb-1111.jsonl
+2025-08-30 22:47  /Users/you/projects/theta                         Spike: streaming JSONL reader backpress…  /Users/you/.codex/sessions/2025/08/30/rollout-2025-08-30T22-47-33-ffff-eeee-dddd-cccc.jsonl
+```
+
 ## Features
 
 - Fast recursive scan of `~/.codex/sessions` for `.jsonl` files
