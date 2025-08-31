@@ -178,8 +178,8 @@ const main = async () => {
   const timeW = 16; // 'YYYY-MM-DD HH:MM'
   const sep = '  ';
   const cwdW = Math.min(50, Math.max(18, Math.floor(termWidth * 0.3)));
-  // Allocate remaining width to ask, keeping path unlimited (no truncation)
-  const askW = Math.max(10, termWidth - (timeW + sep.length + cwdW + sep.length + stringWidth('path') + sep.length));
+  // Use fixed width for ask column to avoid overly long content
+  const askW = 40;
 
   const header = [
     padEndWidth(chalk.bold('time'), timeW),
