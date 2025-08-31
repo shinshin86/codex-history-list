@@ -1,0 +1,44 @@
+{
+  "name": "codex-history-list",
+  "version": "0.1.0",
+  "description": "List Codex session histories from ~/.codex/sessions with cwd and first user ask",
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "codex",
+    "cli",
+    "jsonl",
+    "history"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "shinshin86",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "string-width": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "tsup": "^8.0.1",
+    "typescript": "^5.6.2"
+  },
+  "tsup": {
+    "entry": ["src/cli.ts"],
+    "format": ["esm"],
+    "clean": true,
+    "sourcemap": false,
+    "dts": false,
+    "shims": false,
+    "splitting": false,
+    "minify": false
+  }
+}
