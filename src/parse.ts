@@ -23,10 +23,26 @@ const textsFromContent = (content: any): string[] => {
   return [];
 };
 
+// Return the leading tag name if text starts with something like <tag>
+const leadingTag = (text: string): string | undefined => {
+  const m = text.trimStart().match(/^<([a-zA-Z0-9_:-]+)>/);
+  return m?.[1];
+};
+
 const isEnvironmentContext = (text: string): boolean => {
   const t = text.trimStart();
   return t.startsWith('<environment_context>');
 };
+
+// Tags that should be ignored when picking the user's ask
+// (meta/control blocks that are not the user's actual question)
+const SKIP_ASK_TAGS = new Set([
+  'user_instructions',
+  'system_instructions',
+  'developer_instructions',
+  'assistant_instructions',
+  'agent_instructions',
+]);
 
 const extractCwd = (text: string): string | undefined => {
   // Try tag pattern first
@@ -72,12 +88,22 @@ export const parseFile = async (file: string, opts: ParseOptions = {}): Promise<
       if (type === 'message' && role === 'user') {
         const texts = textsFromContent(obj?.content);
         for (const t of texts) {
+          // Handle special tagged blocks first
           if (isEnvironmentContext(t)) {
             if (!cwd) {
               const c = extractCwd(t);
               if (c) cwd = c;
             }
-          } else if (!ask) {
+            continue;
+          }
+
+          const tag = leadingTag(t);
+          if (tag && SKIP_ASK_TAGS.has(tag)) {
+            // Skip meta/instruction blocks from ask
+            continue;
+          }
+
+          if (!ask) {
             // Normalize to single line for ask; leave full text trimming to formatter
             ask = t.replace(/\s+/g, ' ').trim();
           }
