@@ -26,7 +26,7 @@ time              cwd                                                 ask       
 - Robust JSONL parsing (line-by-line, tolerant of mixed shapes)
 - Extracts:
   - cwd from `<environment_context>` (`<cwd>...</cwd>`) in user messages
-  - the first user ask (excluding environment context)
+  - the first user ask (excluding environment context and instruction/meta blocks like `<user_instructions>`, `<system_instructions>`, `<developer_instructions>`, `<assistant_instructions>`, `<agent_instructions>`)
 - Aligned columns with multi‑byte aware width handling
 - Full, non-truncated path column for easy copy-paste
 - Sorting and filtering by date and cwd
@@ -81,6 +81,10 @@ node dist/cli.js --json
   - User messages are recognized via `{ type: "message", role: "user" }`.
   - `content` may be a string or an array containing `{ type, text }` objects.
   - `cwd` is parsed from user messages whose text starts with `<environment_context>`.
+- Ask selection:
+  - Texts starting with `<environment_context>` are used only to extract `cwd` and are not considered as the ask.
+  - Instruction/meta blocks starting with `<user_instructions>`, `<system_instructions>`, `<developer_instructions>`, `<assistant_instructions>`, or `<agent_instructions>` are ignored when selecting the ask.
+  - The ask is the first remaining user message text, normalized to a single line.
 - Performance:
   - Files are read line-by-line and parsing stops early once both `cwd` and
     the first user ask are found.
