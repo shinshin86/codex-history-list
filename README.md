@@ -5,6 +5,12 @@ It parses JSONL files, extracts the working directory (cwd) from
 `<environment_context>` messages and the first user request, and shows them in
 an aligned table together with the file path.
 
+You can resume a conversation from where you left off by launching Codex with the path to the session JSONL as shown below.
+
+```sh
+codex -c experimental_resume={jsonl path}
+```
+
 ## Sample Output
 
 ```
