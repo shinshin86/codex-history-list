@@ -60,6 +60,49 @@ const truncateToWidth = (text: string, width: number): string => {
   return out + '…';
 };
 
+// Helpers for width-aware truncation patterns
+const takeStartByWidth = (text: string, width: number): string => {
+  if (width <= 0) return '';
+  let out = '';
+  let w = 0;
+  for (const ch of Array.from(text)) {
+    const cw = stringWidth(ch);
+    if (w + cw > width) break;
+    out += ch;
+    w += cw;
+  }
+  return out;
+};
+
+const takeEndByWidth = (text: string, width: number): string => {
+  if (width <= 0) return '';
+  let out = '';
+  let w = 0;
+  for (const ch of Array.from(text).reverse()) {
+    const cw = stringWidth(ch);
+    if (w + cw > width) break;
+    out = ch + out;
+    w += cw;
+  }
+  return out;
+};
+
+const truncateMiddleToWidth = (text: string, width: number): string => {
+  if (stringWidth(text) <= width) return text;
+  const ell = '…';
+  const contentW = Math.max(1, width - stringWidth(ell));
+  const leftW = Math.floor(contentW / 2);
+  const rightW = contentW - leftW;
+  return takeStartByWidth(text, leftW) + ell + takeEndByWidth(text, rightW);
+};
+
+// Compute how much a column can shrink without going below its minimum,
+// bounded by the current overflow amount (excess).
+const computeReduction = (current: number, min: number, excess: number): number => {
+  const canReduce = Math.max(0, current - min);
+  return Math.min(excess, canReduce);
+};
+
 const parseAll = async (files: string[], concurrency = 16): Promise<SessionSummary[]> => {
   const res: SessionSummary[] = [];
   let i = 0;
@@ -181,37 +224,45 @@ const main = async () => {
 
   // Calculate available width for variable columns (excluding time and separators)
   const totalSepWidth = sepLen * 3; // 3 separators between 4 columns
-  const availableWidth = Math.max(60, termWidth - timeW - totalSepWidth); // minimum 60 for variable columns
 
-  // Set minimum widths for readability
-  const cwdMinW = 15;
-  const askMinW = 10; // Reduced minimum for ask since path gets priority
-  const pathMinW = 10;
+  // Set minimum widths for readability (supports narrower terminals)
+  const cwdMinW = 10;
+  const askMinW = 6;
+  const pathMinW = 4;
 
-  // Calculate path width needed (full paths, no truncation)
-  const maxPathLength = Math.max(...output.map(it => stringWidth(it.path)));
+  // Available width for variable columns; avoid synthetic large minima
+  const minTotalVar = cwdMinW + askMinW + pathMinW;
+  const availableWidth = Math.max(minTotalVar, termWidth - timeW - totalSepWidth);
+
+  // Calculate path width needed (prefer full paths; safe on empty output)
+  const maxPathLength = output.length ? Math.max(...output.map((it) => stringWidth(it.path))) : pathMinW;
   let requiredPathW = Math.max(pathMinW, maxPathLength);
 
   // Allocate remaining width to cwd and ask, with path getting priority
-  const remainingWidth = availableWidth - requiredPathW;
-  const cwdW = Math.max(cwdMinW, Math.min(25, Math.floor(remainingWidth * 0.4))); // cwd gets 40% of remaining
+  let remainingWidth = Math.max(0, availableWidth - requiredPathW);
+  let cwdW = Math.max(cwdMinW, Math.min(25, Math.floor(remainingWidth * 0.4))); // cwd gets ~40% of remaining
   let askW = Math.max(askMinW, remainingWidth - cwdW); // ask gets the rest
 
-  // Ensure table fits within terminal width by reducing columns if needed
+  // Ensure table fits within terminal width by reducing columns if needed (ask -> cwd -> path)
   let finalTableWidth = timeW + sepLen + cwdW + sepLen + askW + sepLen + requiredPathW;
   if (finalTableWidth > termWidth) {
-    const excess = finalTableWidth - termWidth;
-    // First try to reduce ask column
-    if (askW > askMinW) {
-      const reduceFromAsk = Math.min(excess, askW - askMinW);
-      askW -= reduceFromAsk;
-      finalTableWidth -= reduceFromAsk;
-    }
-    // If still too wide, reduce path column as last resort (but keep it readable)
-    if (finalTableWidth > termWidth) {
-      const remainingExcess = finalTableWidth - termWidth;
-      const minReasonablePath = Math.max(pathMinW, requiredPathW - remainingExcess);
-      requiredPathW = Math.max(pathMinW, minReasonablePath);
+    let excess = finalTableWidth - termWidth;
+
+    // 1) Reduce ask column
+    const askReduce = computeReduction(askW, askMinW, excess);
+    askW -= askReduce;
+    excess -= askReduce;
+
+    // 2) Reduce cwd column
+    const cwdReduce = computeReduction(cwdW, cwdMinW, excess);
+    cwdW -= cwdReduce;
+    excess -= cwdReduce;
+
+    // 3) Reduce path column (last resort)
+    if (excess > 0) {
+      const pathReduce = computeReduction(requiredPathW, pathMinW, excess);
+      requiredPathW -= pathReduce;
+      excess -= pathReduce;
     }
   }
 
@@ -231,7 +282,7 @@ const main = async () => {
     const pathStr = it.path; // show full path for copy-paste when possible
     const row = [
       padEndWidth(timeStr, timeW),
-      padEndWidth(truncateToWidth(cwdStr, cwdW), cwdW),
+      padEndWidth(truncateMiddleToWidth(cwdStr, cwdW), cwdW),
       padEndWidth(truncateToWidth(askStr, askW), askW),
       padEndWidth(truncateToWidth(pathStr, requiredPathW), requiredPathW) // Truncate path only if absolutely necessary
     ].join(sep);
