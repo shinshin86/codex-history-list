@@ -175,34 +175,65 @@ const main = async () => {
 
   // Render table
   const termWidth = process.stdout.columns || 120;
-  const timeW = 16; // 'YYYY-MM-DD HH:MM'
+  const timeW = 16; // 'YYYY-MM-DD HH:MM' - fixed minimum
   const sep = '  ';
-  const cwdW = Math.min(50, Math.max(18, Math.floor(termWidth * 0.3)));
-  // Use fixed width for ask column to avoid overly long content
-  const askW = 40;
-  // Allocate remaining width to path header for better visual alignment
-  const pathW = Math.max(4, termWidth - (timeW + sep.length + cwdW + sep.length + askW + sep.length));
+  const sepLen = sep.length;
+
+  // Calculate available width for variable columns (excluding time and separators)
+  const totalSepWidth = sepLen * 3; // 3 separators between 4 columns
+  const availableWidth = Math.max(60, termWidth - timeW - totalSepWidth); // minimum 60 for variable columns
+
+  // Set minimum widths for readability
+  const cwdMinW = 15;
+  const askMinW = 10; // Reduced minimum for ask since path gets priority
+  const pathMinW = 10;
+
+  // Calculate path width needed (full paths, no truncation)
+  const maxPathLength = Math.max(...output.map(it => stringWidth(it.path)));
+  let requiredPathW = Math.max(pathMinW, maxPathLength);
+
+  // Allocate remaining width to cwd and ask, with path getting priority
+  const remainingWidth = availableWidth - requiredPathW;
+  const cwdW = Math.max(cwdMinW, Math.min(25, Math.floor(remainingWidth * 0.4))); // cwd gets 40% of remaining
+  let askW = Math.max(askMinW, remainingWidth - cwdW); // ask gets the rest
+
+  // Ensure table fits within terminal width by reducing columns if needed
+  let finalTableWidth = timeW + sepLen + cwdW + sepLen + askW + sepLen + requiredPathW;
+  if (finalTableWidth > termWidth) {
+    const excess = finalTableWidth - termWidth;
+    // First try to reduce ask column
+    if (askW > askMinW) {
+      const reduceFromAsk = Math.min(excess, askW - askMinW);
+      askW -= reduceFromAsk;
+      finalTableWidth -= reduceFromAsk;
+    }
+    // If still too wide, reduce path column as last resort (but keep it readable)
+    if (finalTableWidth > termWidth) {
+      const remainingExcess = finalTableWidth - termWidth;
+      const minReasonablePath = Math.max(pathMinW, requiredPathW - remainingExcess);
+      requiredPathW = Math.max(pathMinW, minReasonablePath);
+    }
+  }
 
   const header = [
     padEndWidth(chalk.bold('time'), timeW),
     padEndWidth(chalk.bold('cwd'), cwdW),
     padEndWidth(chalk.bold('ask'), askW),
-    padEndWidth(chalk.bold('path'), pathW)
+    padEndWidth(chalk.bold('path'), requiredPathW)
   ].join(sep);
   process.stdout.write(header + '\n');
-  const fixedWidth = timeW + sep.length + cwdW + sep.length + askW + sep.length + pathW;
-  process.stdout.write('-'.repeat(Math.min(termWidth, fixedWidth)) + '\n');
+  process.stdout.write('-'.repeat(Math.min(termWidth, timeW + sepLen + cwdW + sepLen + askW + sepLen + requiredPathW)) + '\n');
 
   for (const it of output) {
-    const timeStr = humanTime(it.mtime).padEnd(timeW);
+    const timeStr = humanTime(it.mtime);
     const cwdStr = (it.cwd ?? '-');
     const askStr = (it.ask ?? '-');
-    const pathStr = it.path; // show full path for copy-paste
+    const pathStr = it.path; // show full path for copy-paste when possible
     const row = [
       padEndWidth(timeStr, timeW),
       padEndWidth(truncateToWidth(cwdStr, cwdW), cwdW),
       padEndWidth(truncateToWidth(askStr, askW), askW),
-      padEndWidth(pathStr, pathW)
+      padEndWidth(truncateToWidth(pathStr, requiredPathW), requiredPathW) // Truncate path only if absolutely necessary
     ].join(sep);
     process.stdout.write(row + '\n');
   }
